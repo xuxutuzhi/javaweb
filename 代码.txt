@@ -1,0 +1,73 @@
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class javaweb {
+
+
+    public static void main(String[] args) throws Exception {
+        //创建ServerSocket对象
+        ServerSocket server = new ServerSocket(8812);
+
+
+        while (true) {
+            //创建socket对象
+            Socket socket = server.accept();
+
+
+
+            try {
+                InputStream inputStream = socket.getInputStream();
+                BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream));
+                String line = buffer.readLine();
+                String[] arr = line.split(" ");
+                String requestPath = arr[1].substring(1);
+                System.out.println("请求路径：" + requestPath);
+                FileInputStream fis = null;
+
+
+                try {
+                    fis = new FileInputStream(requestPath);
+                } catch (FileNotFoundException e) {
+
+
+                    StringBuilder response = new StringBuilder();
+                    response.append("HTTP/1.1 404 File Not Found\r\n");
+                    response.append("Content-Type: text/html\r\n");
+                    response.append("Content-Length: 23\r\n");
+                    response.append("\r\n");
+                    response.append("<h1>File Not Found</h1>");
+                    OutputStream os = socket.getOutputStream();
+                    os.write(response.toString().getBytes());
+                    return;
+                }
+
+
+                OutputStream os = socket.getOutputStream();
+                byte[] bytes = new byte[1024];
+                int len = 0;
+                os.write("HTTP/1.1 200 OK\r\n".getBytes());
+                os.write("Content-Type:text/html\r\n".getBytes());
+                os.write("\r\n".getBytes());
+
+
+
+                while ((len = fis.read(bytes)) != -1) {
+                    os.write(bytes, 0, len);
+                }
+
+
+                //释放资源
+                os.close();
+                fis.close();
+                buffer.close();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+
+
